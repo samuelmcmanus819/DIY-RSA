@@ -25,11 +25,19 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as S:
             else:
                 Conn.sendall(bytes("good", "utf-8"))
                 break
+        
         #Sets the private key of the server
         MyPrivKey = Encryption.PrivateKey(d, n)
-        #Signs the message being sent to the client
-        SignedMessage = MyPrivKey.DigitallySign(FileText)
         #Sends the public key
         Conn.send(bytes(str(e) + " " + str(n), "utf-8"))
+        #Sets the client's public key
+        publickey = MyIO.TrimSocket(Conn.recv(4096))
+        ce = int(publickey.split()[0])
+        cn = int(publickey.split()[1])
+        MyPubKey = Encryption.PublicKey(ce, cn)
+        #Signs the message being sent to the client
+        SignedMessage = MyPrivKey.DigitallySign(FileText)
+        #Encrypts the message with the client's public key
+        EncryptedMessage = MyPubKey.Encrypt(SignedMessage)
         #Sends the signed message to the client
-        Conn.sendall(bytes(SignedMessage, "utf-8"))
+        Conn.sendall(bytes(EncryptedMessage, "utf-8"))
